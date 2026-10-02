@@ -1,222 +1,374 @@
-### 1
-Git là một hệ thống quản lí phiên bản mã nguồn mở. Cho phép dev theo dõi,lưu lại lịch sử thay đổi của source code và làm việc nhóm hiệu quản
-Git giúp lưu trữ các thay đổi code, xem ai đã sửa, đã sửa gì và lức nào sửa
-công dụng-quản lí lịch sử xem lại thay đổi trong code
-         -tách nhánh cho phép các member làm việc trên các tính năng khác nhau độc lập kh ảnh hưởng main 
-         -phân tán: mỗi lap đều có repo riêng đày đủ code ,không phụ thuộc lap trung tâm
+# BÁO CÁO TỔNG HỢP VÀ THỰC HÀNH GIT / GITHUB
+
+## 1. Khái niệm Git & Lịch sử ra đời
+
+### 1.1. Git là gì?
+- **Định nghĩa:** Git là một hệ thống quản lý phiên bản mã nguồn mở phân tán 
+- **Công dụng:**
+  - Theo dõi và lưu lại lịch sử thay đổi của source code.
+  - Cho phép các thành viên làm việc nhóm hiệu quả, chia nhánh để phát triển tính năng độc lập mà không ảnh hưởng đến nhánh chính.
+  - **Mô hình phân tán:** Mỗi local đều sở hữu một repo riêng đầy đủ toàn bộ lịch sử, không bị phụ thuộc hoàn toàn vào máy chủ trung tâm.
+
+### 1.2. Lý do Git được tạo ra
+- **Lịch sử:** Do Linus Torvalds khởi xướng phát triển vào năm 2005 để phục vụ việc quản lý mã nguồn nhân Linux (Kernel) sau khi dự án mất quyền truy cập miễn phí vào công cụ BitKeeper.
+- **Các tiêu chuẩn thiết kế cốt lõi:**
+  - **Tốc độ là ưu tiên hàng đầu:** Viết bằng ngôn ngữ C, tối ưu hóa hiệu năng phần cứng.
+  - **Thiết kế phân tán:** Mỗi lập trình viên đều có bản sao đầy đủ của dự án để làm việc offline
+  - **Chuyển nhánh siêu nhẹ:** Nhánh trong Git thực chất chỉ là một con trỏ dung lượng 41 byte trỏ tới một commit. Việc chuyển nhánh diễn ra tức thì.
+  - **Tính bảo mật & toàn vẹn:** Sử dụng mã hóa SHA-1 để đảm bảo dữ liệu không bị hỏng hoặc bị chỉnh sửa lén lút mà không bị phát hiện.
+
+---
+
+## 2. So sánh Git và GitHub / GitLab / Bitbucket
+
+| Tiêu chí | Git | GitHub / GitLab / Bitbucket |
+| :--- | :--- | :--- |
+| **Bản chất** | Phần mềm / Công cụ quản lý phiên bản mã nguồn | Dịch vụ điện toán đám mây lưu trữ kho chứa Git |
+| **Nơi hoạt động** | Cài đặt và chạy trực tiếp trên máy local của dev | Chạy trên máy chủ đám mây thông qua giao diện Web / API |
+| **Chức năng chính** | Theo dõi lịch sử thay đổi, tạo nhánh, khôi phục phiên bản | Lưu trữ code online, chia sẻ code, quản lý issue, Pull Request, phân quyền |
+| **Kết nối mạng** | Hoạt động Offline, không cần kết nối Internet | Cần có kết nối Internet để đẩy (Push) hoặc kéo (Pull) code |
+| **Giao diện** | Tương tác chủ yếu qua Terminal | Giao diện Web trực quan, dễ thao tác quản lý dự án |
+
+> **Tóm lại:** Git là **động cơ** của chiếc xe, còn GitHub / GitLab / Bitbucket là **bãi đỗ xe hay gara**.
+
+---
+
+## 3. Cài đặt Git và cấu hình ban đầu
+
+### 3.1. Kiểm tra phiên bản Git
+Mở Terminal / Git Bash và kiểm tra phiên bản đã cài đặt:
+```bash
+git --version
+Output: git version 2.54.0.windows.1
+```
+
+### 3.2. Cấu hình thông tin người dùng
+Khi tạo một commit, Git sẽ gắn thông tin tác giả vào commit đó. Chạy các lệnh sau để thiết lập tên và email toàn cục:
+```bash
+git config --global user.name "Lê Tiến Dũng"
+git config --global user.email "ledung85499@gmail.com"
+```
+
+### 3.3. Cấu hình SSH Key
+Sử dụng SSH Key giúp xác thực an toàn và không cần nhập lại mật khẩu/token mỗi khi push hoặc pull code.
+
+- **Public Key đã khởi tạo :**
+  ```text
+   AAAAC3NzaC1lZDI1NTE5AAAAIH0PYQ7AXUrYo1xoWUuz7WTYoNjV8YtigR3/ghm+tC02 ledung85499@gmail.com
+  ```
+- **Kiểm tra kết nối SSH tới GitHub:**
+  ```bash
+  ssh -T git@github.com
+  ```
+
+> **Minh chứng thực hành:**
+ 
+> ![alt text](image.png)
+---
+
+## 4. Khởi tạo và Clone Repository
+
+### 4.1. `git init`
+Dùng để khởi tạo một kho lưu trữ Git mới hoàn toàn trong một thư mục trống trên máy local. Lệnh này sẽ tạo ra một thư mục ẩn `.git`.
+```bash
+git init
+```
+
+### 4.2. `git clone`
+Dùng để sao chép một kho lưu trữ đã có sẵn từ trên remote (GitHub/GitLab) về máy cá nhân, bao gồm đầy đủ lịch sử commit và thư mục ẩn `.git`.
+```bash
+git clone <URL_REPOSITORY>
+```
+
+### 4.3. Cấu trúc thư mục `.git`
+Thư mục `.git` chứa toàn bộ metadata, lịch sử commit, thông tin branch, con trỏ `HEAD` và các file cấu hình (`config`) của repository.
+
+---
+
+## 5. Trạng thái file trong Git và các lệnh kiểm tra
+
+### 5.1. Các trạng thái của file
+1. **Untracked:** File mới được tạo trong dự án nhưng chưa được Git theo dõi.
+2. **Staged:** File đã được đưa vào khu vực chuẩn bị (Staging Area) bằng lệnh `git add`, chờ để lưu ở lần commit tiếp theo.
+3. **Committed:** File đã được lưu trữ an toàn vào lịch sử của kho chứa sau khi chạy lệnh `git commit`.
+4. **Modified:** File đã có trong lịch sử Git nhưng vừa bị chỉnh sửa ở máy local so với phiên bản commit gần nhất.
+
+### 5.2. Các câu lệnh kiểm tra trạng thái
+- `git status`: Kiểm tra trạng thái hiện tại của các file trong thư mục làm việc (hiển thị file nào đang ở dạng Untracked, Staged hay Modified).
+- `git diff`: Xem chi tiết các dòng code cụ thể được thêm vào hoặc xóa đi so với phiên bản trước đó.
+
+```bash
+git status
+git diff
+```
 
+> **Minh chứng thực hành:**
+> ![Trạng thái file và git status](./images/02-git-status-diff.png)
 
-LÝ DO GIT ĐƯỢC TẠO RA?
-Git được linux torvalds tạo ra năm 2005 để phục vụ việc phất triển nhân linux (kernel)
-Ngày xưa linux là dự án mã nguồn mở để hàng nghìn dev đóng góp code.
-Nhiều người dùng quá làm linux bị quá tải xong phải chuyển qua bitkeeper
-Có người thiết kế ngược giao thức của bitkeeper làm cho vi phạm nên linux mất đi công cụ quản lí mã nguồn cốt lõi
-git được thiết kế nhằm giải quyết vấn đề vì nó đáp ứng
--TỐC ĐỘ LÀ ƯU TIÊN : Git viết bằng C, tối ưu hóa phần cứng performance
--PHÂN TÁN          :Mỗi dev đều có bản sao của dự án có thể làm riêng
--Chuyển nhánh      :git có một nhánh chỉ là con trỏ 41byte tới một commit. Chuyển nhánh rất nhẹ và nhanh
--Bảo mật           :đảm bảo dữ liệu kh bao giờ bị hỏng và sửa đổi lén lút bị phát hiện
+---
 
+## 6. Các thao tác Commit căn bản
 
+### 6.1. Các câu lệnh thực hiện
+- **Đưa thay đổi vào Staging Area:**
+  ```bash
+  git add <tên_file>
+  # Hoặc đưa toàn bộ file thay đổi vào Staging Area:
+  git add .
+  ```
+- **Lưu thay đổi vào Repository:**
+  ```bash
+  git commit -m "Nội dung mô tả ngắn gọn về thay đổi"
+  ```
+
+### 6.2. Quy chuẩn viết Commit Message tốt
+- Sử dụng câu mệnh lệnh ngắn gọn ở thì hiện tại như `add`, `fix`, `update`, `refactor` (tránh dùng thì quá khứ như `added`, `fixed`).
+- Dòng đầu tiên nên dưới 50 ký tự, tóm tắt rõ mục đích thay đổi.
+- Nếu cần thiết, xuống dòng để viết thêm phần mô tả chi tiết lý do và cách thức thay đổi.
+
+---
+
+## 7. Quản lý lịch sử và phiên bản
 
+- `git log`: Liệt kê toàn bộ danh sách các commit trước đó (bao gồm tác giả, thời gian, mã commit ID và thông điệp commit).
+- `git show <commit_id>`: Xem chi tiết một mốc thời gian cụ thể ở lần commit trước đó đã sửa những dòng code nào.
+- `git blame <tên_file>`: Hiển thị từng dòng code trong file do ai viết và commit vào lúc nào (dùng để tra cứu trách nhiệm).
+- **Commit ID:** Là một chuỗi mã hóa SHA-1 dài 40 ký tự (độc nhất cho mỗi lần commit), đóng vai trò như "CCCD" để Git nhận diện chính xác từng mốc thời gian.
 
+```bash
+git log --oneline
+git show a1b2c3d
+git blame main.cpp
+```
 
-### 2
-KHÁC BIỆT GIT VÀ GITHUB/GITLAB/BITBUCKET
-Bản chất:Git là công cụ phần mềm quản lí phiên bản mã nguồn mở
-        :Github là các dich vụ điện toán đám mây lưu trữ kho chứa git
+---
 
-Nơi hoạt động:Git được cài và chạy trực tiếp trên local của dev
-             :github chạy trên máy chủ thông qua giao diện trình duyệt hoặc API
+## 8. Hủy bỏ thay đổi (Undo Operations)
 
+### 8.1. `git checkout` / `git restore`
+Khi vừa sửa file ở máy local nhưng chưa đưa vào  (`git add`), lệnh này sẽ hủy bỏ các thay đổi và đưa file trở lại trạng thái sạch sẽ như commit gần nhất.
+```bash
+git restore <tên_file>
+```
 
-Chức năng chính:Git theo dõi lịch sử hay đổi file,tạo nhánh, khôi phục phiên bản cũ
-               :github lưu trữ code online,chia sẻ code và làm việc nhóm, quản lí dự án phân quyền code review
+### 8.2. `git reset`
+Xóa sạch hoặc tua ngược lịch sử commit đã làm trước đó, quay ngược thời gian về mốc chỉ định.
+```bash
+# Giữ lại các thay đổi ở môi trường làm việc
+git reset --soft <commit_id>
 
-Kết nối:Git hoặt động offline,kh cần internet
-        :github cần có mạng để đẩy code lên hoặc kéo về
+# Xóa bỏ hoàn toàn mọi thay đổi sau mốc commit đó:
+git reset --hard <commit_id>
+```
 
-Giào diện:git tương tác chủ yêu qua terminal haowjc client  
-        :github giao diện web dễ thao tác, quản lí issue, pull request
+### 8.3. `git revert`
+Tạo ra một commit mới có nội dung đảo ngược lại commit lỗi trước đó. Cách này giúp vô hiệu hóa lỗi nhưng vẫn giữ nguyên lịch sử commit cũ (an toàn khi làm việc nhóm).
+```bash
+git revert <commit_id>
+```
 
-TÚM LẠI git là động cơ chiếc xe còn github là bãi đỗ xe hoặc gara
+---
 
+## 9. Quản lý file rác với `.gitignore`
 
+Trong quá trình phát triển, dự án sẽ sinh ra nhiều file rác, file cấu hình môi trường hoặc thư mục biên dịch 
 
-### 3
-CÀI ĐẶT GIT VÀ CẤU HÌNH BÁN ĐẦU
-git --version thì đã có là 2.54.0.windiws.1
+File `.gitignore` được tạo ra để khai báo danh sách các file/thư mục mà Git sẽ hoàn toàn bỏ qua, không theo dõi lịch sử và không đưa lên kho chứa.
 
-Khi tạo một commit thì git sẽ gắn thông tin người làm vào commit đó.
-Khi chạy lệnh git config --global user.name "Lê Tiến Dũng" giúp thiết lập tên hiện thị
-Tương tự với email cũng vậy
+---
 
-Sử dụng SSH Key giúp xác thực an toàn và không cần phải nhập mật khẩu/token mỗi khi push hoặc pull code.
-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIH0PYQ7AXUrYo1xoWUuz7WTYoNjV8YtigR3/ghm+tC02 ledung85499@gmail.com
-Đây là mã ssh key đã được tao
-đã vào setting và ssh trên github và add được ssh key
-lệnh ssh -t git@gihub.com thì đã chạy được 
+## 10 & 11. Quản lý Nhánh (Branching)
 
+### 10.1. Khái niệm Branch
+- **Branch (Nhánh):** Là một bản sao độc lập của mã nguồn tại một thời điểm. Cho phép lập trình viên tách ra làm việc riêng biệt mà không làm ảnh hưởng đến nhánh chính (`main`).
+- **Tại sao cần?**
+  - Giúp nhiều thành viên cùng làm việc trên một dự án mà không dẫm chân lên nhau.
+  - Thử nghiệm tính năng mới an toàn; nếu bị lỗi chỉ cần xóa nhánh đó đi mà không làm hỏng hệ thống chính.
 
+### 11.1. Các câu lệnh làm việc với Branch
+```bash
+# Xem danh sách các nhánh hiện có:
+git branch
 
-### 4
-git init: tạo một kho lưu trữ repo git mới hoàn toàn trong thư mục trống trên local tạo ra một thư mục ẩn .git
-git clone url:sẽ sao chép một kho lưu trữ đã có sẵn về lap cá nhân bao gồm cả lịch sử commit và thư mục ẩn .git
-Cấu trúc .git : sẽ chưa các metadata, lịch sử commit, thông tin branch, và config của repo chính
+# Tạo nhánh mới và chuyển sang nhánh đó ngay lập tức:
+git checkout -b <tên_nhánh>
+# Hoặc sử dụng lệnh cú pháp mới:
+git switch -c <tên_nhánh>
 
+# Chuyển đổi qua lại giữa các nhánh:
+git switch <tên_nhánh>
+```
 
+> **Minh chứng thực hành:**
+> ![alt text](image-1.png)
+---
 
-### 5
-Trạng thái file trong git
-Untracked: file mới được tạo vào mục dự án nhưng chưa được git quản lí và theo dõi
-Staged   : file được đưa vào khu vực chuẩn bị bằng lệnh git add. chờ để lưu và commit tiếp theo 
-Committed: file được lưu trữ an toàn và đi vào lịch sử của kho lưu trữ sau khi chạy lệnh git commit -m ""
-Modified : file có săn trong lichj sử git nhưng vừa bị thay đổi ở máy tính so với bản kéo về máy gần nhất
+## 12. Gộp nhánh (Merge) và Xử lý Conflict
 
-các câu lệnh trạng thái
-git status :kiểm tra trạng thái hiện tại của file trong thư mục xem nó hiện ra gì như stage modifed untracked
-git diff   :xem chi tiết các dòng code cụ thể được thêm vào hay xóa đi so với phiên bản trước đây đại loại là so sánh xem khác nhau cái gì
+### 12.1. `git merge`
+Dùng để gộp toàn bộ lịch sử và code từ một nhánh khác vào nhánh hiện tại đang đứng.
+```bash
+git switch main
+git merge <tên_nhánh_cần_gộp>
+```
+> **Minh chứng thực hành:**
+> ![alt text](image-2.png)
+### 12.2. Xử lý xung đột (Merge Conflict)
+- **Nguyên nhân:** Xảy ra khi hai nhánh cùng sửa đổi ở **chính xác một dòng code** nhưng lại có nội dung khác nhau. Khi merge, Git không thể tự quyết định nên lấy dòng code nào.
+- **Cách xử lý:** Git sẽ đánh dấu đoạn bị xung đột trong file. Lập trình viên phải mở file ra, xem xét kỹ, chọn giữ lại code đúng, xóa các ký tự đánh dấu thừa (`<<<<<<<`, `=======`, `>>>>>>>`), sau đó thực hiện `git add` và `git commit` lại.
 
+---
 
+## 13. Chiến lược quản lý nhánh (Branching Strategy)
 
-### 6
-các câu lệnh thực hiện
-git add <tên file> :đưa các file thay đổi vào khu vực chuẩn bị(stageing arena) 
-git commit -m "nội dung viết gì cũng được" : lưu các thay đổi từ stageing arena vào kho lưu trũ kèm thay lời nhắn cho dễ nhớ
+Là tập hợp các quy tắc chuẩn khi làm việc nhóm để quản lý các nhánh một cách khoa học:
+- **`main` / `master`:** Nhánh chính của dự án, luôn chứa code sạch, đã qua kiểm thử, hoạt động ổn định và sẵn sàng triển khai lên môi trường thực tế (Production).
+- **`develop`:** Nhánh phát triển chung, tích hợp các tính năng mới từ các dev trước khi đưa lên nhánh `main`.
+- **`feature/*`:** Nhánh riêng do từng dev tạo ra để làm một tính năng cụ thể (ví dụ: `feature/login`, `feature/payment`).
+- **`hotfix/*`:** Nhánh dùng để xử lý khẩn cấp các lỗi phát sinh trực tiếp trên môi trường Production.
 
-Cách viết commit tốt
-Sử dụng câu mệnh lệnh ngón gọn thì hiện tại như add fix update chứ kh dùng thì quá khứ 
-dòng đầu tiên dưới 50 kí tụ ,tóm tắt mục đích thay đổi
-Nếu cần, xuống dòng viết thêm chi tiết mô tả vì sao thay đổi 
+---
 
+## 14. Thao tác với Remote Repository
 
-### 7
-Làm việc với lịch sử và phiên bản
-git log   :liệt kê toàn bộ danh sách những lần commit trước đó như ai làm, thời gian nào,lời nhắn là gì(đại loại sổ nhât kỉ)
-git show<id commit>: xem chi tiết một mốc thời gian cụ thể ở lần commit trước đó sửa dòng code nào
+```bash
+# Khai báo đường dẫn đến kho chứa trên remote (đặt tên gợi nhớ là origin):
+git remote add origin <URL_REPOSITORY>
 
-git blame<tên file>:hiển thị từng dòng code trong file do ai viết và commit lúc nào(đại loại dang tra cứu trách nhiệm xem ai làm sai)
-commit id: là một chuỗi mã óa dài khoảng 40 kí tự độc nhất cho mỗi lần commit git dùng chuỗi nào là CCCD để nhận diện chính xác mốc thời gian 
+# Đẩy code từ máy local lên kho chứa remote:
+git push -u origin <tên_nhánh>
 
+# Kéo code mới nhất từ remote về máy local và tự động merge:
+git pull origin <tên_nhánh>
 
-### 8
-UNDO
-git checkout/ git restore:khi vừa sửa một file ở máy nhưng chưa đưa các file thay đổi vào một thư mục chuẩn bị.Lệnh này hủy bỏ các thay đổi và đưa file và sạch sẽ như chưa hề có cuộc chia li
+# Tải dữ liệu mới từ remote về kiểm tra âm thầm (chưa merge vào code local):
+git fetch origin
+```
 
-git reset:xọa sạch lịch sử commit đã làm trước, quay ngược thời gian vứt bỏ các commit sau
+---
 
-git revert:tạo ra một bản vá ngược lại thay vì xóa sạch như reset giữ nguyên quá khứ đen tối và thêm một commit mới vô hiệu hóa lỗi commit trước
+## 15. Quy trình Fork, Clone và Pull Request (PR)
 
+1. **Fork:** Sao chép kho lưu trữ của người khác về tài khoản GitHub cá nhân để có toàn quyền sở hữu và chỉnh sửa.
+2. **Clone:** Tải kho chứa đã Fork từ GitHub về máy cá nhân để bắt đầu lập trình.
+3. **Pull Request (PR):** Sau khi hoàn thành công việc và push lên repo cá nhân, tạo một yêu cầu gửi tới repo gốc để chủ dự án (owner) review code và chấp nhận (accept) merge bài nộp vào dự án chung.
 
-### 9
-.gitinore : bỏ qua các dự án rác
-Trong quá trình code, máy sẽ build ra nhiều file rác. File .gitinore sinh ra để cho lệnh git sẽ lờ đi coi như những file đó không tồn tại và chỉ quản lí những file cần được chăm sóc
+---
 
+## 16. Giải quyết Conflict khi làm việc nhóm
 
-### 10
-Branch :nhánh chính là một bản sao độc lập của main chính tại một thời điềm. Cho phép tách ra làm việc riêng biêt mà kh ảnh hướng đến main 
+### Quy trình thực hành giải quyết Conflict thực tế:
+1. Khi push hoặc merge code bị báo lỗi Conflict, mở dự án trên VS Code.
+2. VS Code sẽ hiển thị trực quan các lựa chọn:
+   - *Accept Current Change* (Giữ lại code của bạn).
+   - *Accept Incoming Change* (Giữ lại code của người khác).
+   - *Accept Both Changes* (Giữ lại cả hai).
+3. Sau khi chọn xong giải pháp đúng, lưu file lại.
+4. Chạy lệnh:
+   ```bash
+   git add <file_xử_lý_conflict>
+   git commit -m "Fix merge conflict"
+   ```
 
-Tại sao cần?
-Giúp cho các dev cùng làm việc trên mà dự án mà kh dẫm chân lên nhau gây ra chồng chéo
-Giúp thử nghiệm tính năng mới an toàn. Nếu viết lỗi chỉ cần xóa nhánh đó đi thôi mà kh sợ hệ thống sập 
+> **Minh chứng thực hành:**
+> ![Thực hành giải quyết Merge Conflict](./images/04-merge-conflict-vscode.png)
 
-### 11
+---
 
-git branch :dùng để xem danh sách các nhánh đang có hiện tại hoặc có thể tạo thêm một nhánh mới
-git checkout -b <tên nhánh> vừa tạo nhánh mới và nhảy sang nó để làm việc luôn
-Hoặc dùng lệnh xịn hơn là git switch -c <tên nhánh>
-git checkout <tên nhánh>/git switch<tên nhánh>: nhảy qua nhảy lại giữa các nhánh
+## 17. Đánh nhãn phiên bản với Git Tag
 
+- **Mục đích:** Thay vì phải nhớ các chuỗi commit ID dài phức tạp, `tag` dùng để dán nhãn cho một mốc phiên bản phát hành cụ thể (ví dụ: `v1.0.0`, `v2.0.0`).
+- **Các lệnh thao tác:**
+  ```bash
+  # Tạo tag cho commit hiện tại:
+  git tag v1.0.0
 
-### 12 
-merger và conflict
-git merge <tên nhánh>: gộp toàn bộ code từ một nhánh khác vào nhánh hiện tại đang đứng
-Xử lí xung đột (conflict):
-                         xảy ra khi 2 nhánh cùng sửa vào chính xác một dong code có trong main được pull về nhưng lại viết 2 nội dung khác nhau. Git sẽ không biết gọi cái nào và tạo ra conflict yêu cầu dev tự ra quyết định chọn nhánh
+  # Kiểm tra phiên bản hiện tại đang cách mốc tag gần nhất bao nhiêu commit:
+  git describe
+  ```
 
+---
 
-### 13
-chiến lược branch:
-Là các quy tắc chuẩn khi làm việc nhóm để quản lí các nhánh cho khoa học
-main/master: nhánh chính thức của dự án, luôn chứa code sachh, chạy hoàn hảo, và luôn sẵn sãng đưa lên môi trường thực tế cho user
+## 18. Cất tạm công việc với Git Stash
 
-develop :nhánh phát triển chung, nơi tổng hợp các tính năng mới trước khi đưa lên branch chính
-feature/* :nhánh riêng do từng dev tự tạo ra để làm một công việc cụ thể như login, payment,..
-hotfix/* :nhánh dùng để xử lí gấp các issure phát sinh khẩn cấp khi hệ thống đang chạy thực tế
+- **Khái niệm:** Lệnh `git stash` giống như một "túi thần kỳ". Khi bạn đang code dở dang một tính năng nhưng phải chuyển sang nhánh khác gấp để fix bug, lệnh này sẽ cất tạm toàn bộ code chưa commit vào bộ nhớ tạm, trả lại Working Directory sạch sẽ.
+- **Cú pháp:**
+  ```bash
+  # Cất code dở dang vào stash:
+  git stash
 
+  # Lấy lại code từ stash ra để tiếp tục làm việc:
+  git stash pop
+  ```
 
+---
 
+## 19. Tối ưu lịch sử Commit với Rebase và Squash
 
-### 14
-git remote add <tên gọi> <url> :dung để khai báo cho máy tính biết đường dẫn đến kho chưa trên repo là origin chẳng hạn
-git push :đẩy code từ máy tính lên trên repo
-git pull :kéo code mới nhất từ repo về máy tính 
-git fetch : giống git pull nhưng nó chỉ xem xét xem máy có gì mới và tải về máy âm thầm để xem trước chứ chưa tự động merge vào code hiện tại trên máy
+- **Mục đích:** Khi làm việc, bạn tạo ra quá nhiều commit nháp lẻ tẻ. Rebase và Squash giúp gộp nhiều commit nhỏ thành một commit duy nhất cho lịch sử đẹp đẽ và chuyên nghiệp.
+- **Cú pháp:**
+  ```bash
+  # Mở giao diện tương tác để gộp n commit gần nhất:
+  git rebase -i HEAD~n
 
+  # Rebase nhánh hiện tại lên đầu nhánh main:
+  git rebase main
+  ```
 
-### 15
-fork : sao chép nền tảng cảu một dự án người khác về tài khoản của mình để có thể nắm quyền sở hữu và chỉnh sửa 
-clone :tải kho đã fork đó từ trên github và máy cá nhân để bắt đầu code
-pull request :code xong rồi thực hiện push lên repo, sẽ có một yêu cầu cần kéo để gửi bài đó sang repo riêng của dự án để nộp bài, nếu owner xem xét rồi mới accept code đại loại như đóng gói rồi nộp bài
+---
 
+## 20. Tạo phím tắt lệnh với Git Alias
 
+Thay vì phải gõ các câu lệnh dài, bạn có thể thiết lập phím tắt riêng (alias) để thao tác cực kỳ nhanh chóng.
+```bash
+# Tạo phím tắt 'st' cho 'status':
+git config --global alias.st status
 
-### 16
-Giải quyết conflict khi làm việc nhóm
-Thực hành merge conflict thực tế :như nói bên trên thì khi nhiều người cùng sửa dòng code ở branch riêng của họ rồi push lên nhánh thì git kh biết nên lấy của ai bị conflict. Thì phải mở trực tiếp vsocde và chọn giữ lại đoạn code đúng của bạn và xóa của bạn khác kia đi rồi add và commit lại
+# Tạo phím tắt 'co' cho 'checkout':
+git config --global alias.co checkout
 
+# Tạo phím tắt hiển thị log đẹp:
+git config --global alias.lg "log --oneline --graph --decorate"
+```
 
-### 17
-Công cụ kĩ năng nâng cao
-tag : thay vì nhớ các mã của commit như a1b2b3b34v4 quá khó tag để dán nhãn cho một mốc phiên bản cụ thể như v1.0.0
+---
 
-git tag <tên tag> :tạo nhãn cho phiên bản hiện tại
-git describe      :giúp kiểm tra phiên bản hiện tại đang cách mốc tag gần nhất bao nhiêu commit
+## 21. Khôi phục dữ liệu với Git Reflog
 
+- **Công dụng:** `git reflog` ghi lại mọi hoạt động thao tác con trỏ HEAD từng diễn ra trên Git (bao gồm cả các commit đã bị `reset --hard` hoặc nhánh đã lỡ xóa nhầm).
+- **Cách khôi phục:** Tra cứu tọa độ commit hash cũ trong reflog, sau đó dùng `git reset` hoặc `git checkout` về tọa độ đó để cứu lại dữ liệu.
 
+```bash
+git reflog
+git reset --hard HEAD@{1}
+```
 
+> **Minh chứng thực hành:**
+> ![Tra cứu nhật ký git reflog](./images/05-git-reflog.png)
 
-### 18
-Stash(cất đồ tạm thời)
-git stash :cất tạm code đang dang dở vào một package, giúp máy tính sạch sẽ và bạn sẽ làm việc khác, xong việc chỉ cần lấy ra dùng tiếp
-Hoạt động như túi thần kì doraemon
+---
 
+## 22. Tổng kết các tình huống áp dụng thực tế
 
+### 22.1. Tình huống Merge Conflict
+- **Hiện tượng:** Bạn và đồng nghiệp cùng sửa một dòng code, khi merge Git bị rối.
+- **Giải pháp:** Mở file bị conflict, chọn giữ lại mã nguồn chính xác, xóa ký tự thừa, sau đó `git add` và `git commit` lại.
 
-### 19
-Rebase và squash
-Khi bạn làm việc và commit liên tục, lịch sử chi chít các dòng lệnh commit nháp liên tinh được dán nhãn
-git rebase -i HEAD~n (n là số lượng commit muốn merge):mở ra trình chỉnh sửa để quản lí có thể merge hay squash
-git rebase <tên nhánh chính>: giúp bốc toàn bộ commit mới ở nhánh của bạn cho thật đẹp đẽ rồi đem nộp vô nhánh chính
+### 22.2. Revert Code Rollback Version
+- **Hiện tượng:** Lỡ tay push một đoạn code bị lỗi nghiêm trọng làm sập hệ thống.
+- **Giải pháp:** Sử dụng `git revert <commit_id_lỗi>` để tạo một commit bản vá ngược lại vô hiệu hóa lỗi mà vẫn bảo toàn lịch sử hệ thống.
 
+### 22.3. Đóng gói & Bàn giao dự án (Release)
+- **Hiện tượng:** Đã hoàn thành toàn bộ tính năng yêu cầu của đợt phát hành.
+- **Giải pháp:** Gắn thẻ `git tag v1.0.0` và đẩy tag lên GitHub (`git push origin --tags`) để tạo bản Release chính thức bàn giao dự án.
 
+### 22.4. Khi nào dùng Fetch và Pull?
+- **Dùng `git fetch`:** Khi bạn muốn kiểm tra xem trên remote repository có ai vừa đẩy code mới lên hay không một cách âm thầm, chưa muốn gộp ngay vào máy local.
+- **Dùng `git pull`:** Khi bạn chắc chắn muốn tải thẳng code mới nhất trên remote về và tự động merge ngay vào mã nguồn ở máy local để tiếp tục làm việc.
 
-### 20
-git allias log formatting
-Thay vì phải gõ câu lệnh dài ngoặc nghèo như git status git remote add orgin ,... Bạn có thử tự tạo các phím tắt riêng (vd chữ st thay cho status hay ch thay checkout) để thao tác cực kì nhanh chóng
 
 
 
-### 21
-git reflog:khi bạn xóa nhầm nhánh hoặc reset hết commit. Lệnh này ghi lại hoặt động bạn tuwnhgf làm trên git . có thể tra cứu lại tọa độ cũ để phục hồi lại code
-
-
-
-### 22
-Dự án thực tế áp dụng git
-merger confict: bạn và một người khác cùng sửa dòng code, rồi merge làm git bị rồi và kh biết chọn ai
--->mở file lên git sẽ đánh dấu rõ đoạn nào của bạn đoạn nào của người kia, bạn chọn code đúng xóa các kí hiệu thừa rồi add và commit lại
-
-Revert code rollback version
- lỡ tay đẩy một đoạn code bị lỗi làm sập hệ thống 
----> dùng revert để tạo bản chuột bạch cho hệ thống xử tử
-
-Dự án đã làm xong các tính năng của tuần này hoặc làm xong phiên bản này cần đóng gói và bàn giao
----> găn thẻ tag vào tạo bản release cho github để đánh dấu đã complete đến đâu rồi
-
-Khi nào dùng fetch và pull
-fetch: khi bản muốn kiểm tra xem trên gihub có ai vừa đẩy code mới lên không thật âm thầm, chưa muốn merge vào máy
-pull :khi bản muốn tai thẳng code mới nhất trên repo về tự merge thẳng vô máy để làm việc tiếp 
 
 
 
