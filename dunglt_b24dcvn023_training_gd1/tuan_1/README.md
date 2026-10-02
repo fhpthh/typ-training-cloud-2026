@@ -73,12 +73,15 @@ Dùng để khởi tạo một kho lưu trữ Git mới hoàn toàn trong một 
 ```bash
 git init
 ```
+>![alt text](image-3.png)
+Reinitialized vì đã được thêm file .git từ trước rồi
 
 ### 4.2. `git clone`
-Dùng để sao chép một kho lưu trữ đã có sẵn từ trên remote (GitHub/GitLab) về máy cá nhân, bao gồm đầy đủ lịch sử commit và thư mục ẩn `.git`.
+Dùng để sao chép một kho lưu trữ đã có sẵn từ trên remote Github về máy cá nhân, bao gồm đầy đủ lịch sử commit và thư mục ẩn `.git`.
 ```bash
 git clone <URL_REPOSITORY>
 ```
+> ![alt text](image-4.png)
 
 ### 4.3. Cấu trúc thư mục `.git`
 Thư mục `.git` chứa toàn bộ metadata, lịch sử commit, thông tin branch, con trỏ `HEAD` và các file cấu hình (`config`) của repository.
@@ -103,7 +106,8 @@ git diff
 ```
 
 > **Minh chứng thực hành:**
-> ![Trạng thái file và git status](./images/02-git-status-diff.png)
+> ![alt text](image-5.png)
+> ![alt text](image-6.png)
 
 ---
 
@@ -120,14 +124,13 @@ git diff
   ```bash
   git commit -m "Nội dung mô tả ngắn gọn về thay đổi"
   ```
+  > ![alt text](image-7.png)
 
 ### 6.2. Quy chuẩn viết Commit Message tốt
 - Sử dụng câu mệnh lệnh ngắn gọn ở thì hiện tại như `add`, `fix`, `update`, `refactor` (tránh dùng thì quá khứ như `added`, `fixed`).
 - Dòng đầu tiên nên dưới 50 ký tự, tóm tắt rõ mục đích thay đổi.
 - Nếu cần thiết, xuống dòng để viết thêm phần mô tả chi tiết lý do và cách thức thay đổi.
-
 ---
-
 ## 7. Quản lý lịch sử và phiên bản
 
 - `git log`: Liệt kê toàn bộ danh sách các commit trước đó (bao gồm tác giả, thời gian, mã commit ID và thông điệp commit).
@@ -141,6 +144,17 @@ git show a1b2c3d
 git blame main.cpp
 ```
 
+>![alt text](image-8.png)
+
+
+
+>![alt text](image-9.png)
+
+
+
+>![alt text](image-10.png)
+
+
 ---
 
 ## 8. Hủy bỏ thay đổi (Undo Operations)
@@ -150,23 +164,27 @@ Khi vừa sửa file ở máy local nhưng chưa đưa vào  (`git add`), lệnh
 ```bash
 git restore <tên_file>
 ```
+>![alt text](image-11.png)
+
 
 ### 8.2. `git reset`
 Xóa sạch hoặc tua ngược lịch sử commit đã làm trước đó, quay ngược thời gian về mốc chỉ định.
 ```bash
 # Giữ lại các thay đổi ở môi trường làm việc
-git reset --soft <commit_id>
+git reset --soft <commit-id>
 
+>![alt text](image-12.png)
 # Xóa bỏ hoàn toàn mọi thay đổi sau mốc commit đó:
 git reset --hard <commit_id>
 ```
+![alt text](image-13.png)
 
 ### 8.3. `git revert`
 Tạo ra một commit mới có nội dung đảo ngược lại commit lỗi trước đó. Cách này giúp vô hiệu hóa lỗi nhưng vẫn giữ nguyên lịch sử commit cũ (an toàn khi làm việc nhóm).
 ```bash
 git revert <commit_id>
 ```
-
+>![alt text](image-14.png)
 ---
 
 ## 9. Quản lý file rác với `.gitignore`
@@ -177,7 +195,7 @@ File `.gitignore` được tạo ra để khai báo danh sách các file/thư m�
 
 ---
 
-## 10 & 11. Quản lý Nhánh (Branching)
+## 10 & 11. Quản lý Nhánh
 
 ### 10.1. Khái niệm Branch
 - **Branch (Nhánh):** Là một bản sao độc lập của mã nguồn tại một thời điểm. Cho phép lập trình viên tách ra làm việc riêng biệt mà không làm ảnh hưởng đến nhánh chính (`main`).
@@ -190,18 +208,21 @@ File `.gitignore` được tạo ra để khai báo danh sách các file/thư m�
 # Xem danh sách các nhánh hiện có:
 git branch
 
+
+
 # Tạo nhánh mới và chuyển sang nhánh đó ngay lập tức:
 git checkout -b <tên_nhánh>
+
+
 # Hoặc sử dụng lệnh cú pháp mới:
 git switch -c <tên_nhánh>
 
 # Chuyển đổi qua lại giữa các nhánh:
 git switch <tên_nhánh>
 ```
+>![alt text](image-18.png)
+>![alt text](image-21.png)
 
-> **Minh chứng thực hành:**
-> ![alt text](image-1.png)
----
 
 ## 12. Gộp nhánh (Merge) và Xử lý Conflict
 
@@ -211,18 +232,18 @@ Dùng để gộp toàn bộ lịch sử và code từ một nhánh khác vào n
 git switch main
 git merge <tên_nhánh_cần_gộp>
 ```
-> **Minh chứng thực hành:**
-> ![alt text](image-2.png)
+
+>![alt text](image-19.png)
 ### 12.2. Xử lý xung đột (Merge Conflict)
 - **Nguyên nhân:** Xảy ra khi hai nhánh cùng sửa đổi ở **chính xác một dòng code** nhưng lại có nội dung khác nhau. Khi merge, Git không thể tự quyết định nên lấy dòng code nào.
 - **Cách xử lý:** Git sẽ đánh dấu đoạn bị xung đột trong file. Lập trình viên phải mở file ra, xem xét kỹ, chọn giữ lại code đúng, xóa các ký tự đánh dấu thừa (`<<<<<<<`, `=======`, `>>>>>>>`), sau đó thực hiện `git add` và `git commit` lại.
 
 ---
 
-## 13. Chiến lược quản lý nhánh (Branching Strategy)
+## 13. Chiến lược quản lý nhánh
 
 Là tập hợp các quy tắc chuẩn khi làm việc nhóm để quản lý các nhánh một cách khoa học:
-- **`main` / `master`:** Nhánh chính của dự án, luôn chứa code sạch, đã qua kiểm thử, hoạt động ổn định và sẵn sàng triển khai lên môi trường thực tế (Production).
+- **`main` / `master`:** Nhánh chính của dự án, luôn chứa code sạch, đã qua kiểm thử, hoạt động ổn định và sẵn sàng triển khai lên Production.
 - **`develop`:** Nhánh phát triển chung, tích hợp các tính năng mới từ các dev trước khi đưa lên nhánh `main`.
 - **`feature/*`:** Nhánh riêng do từng dev tạo ra để làm một tính năng cụ thể (ví dụ: `feature/login`, `feature/payment`).
 - **`hotfix/*`:** Nhánh dùng để xử lý khẩn cấp các lỗi phát sinh trực tiếp trên môi trường Production.
@@ -244,14 +265,17 @@ git pull origin <tên_nhánh>
 # Tải dữ liệu mới từ remote về kiểm tra âm thầm (chưa merge vào code local):
 git fetch origin
 ```
-
+>![alt text](image-22.png)
+>![alt text](image-23.png)
+>![alt text](image-24.png)
+>![alt text](image-25.png)
 ---
 
 ## 15. Quy trình Fork, Clone và Pull Request (PR)
 
 1. **Fork:** Sao chép kho lưu trữ của người khác về tài khoản GitHub cá nhân để có toàn quyền sở hữu và chỉnh sửa.
 2. **Clone:** Tải kho chứa đã Fork từ GitHub về máy cá nhân để bắt đầu lập trình.
-3. **Pull Request (PR):** Sau khi hoàn thành công việc và push lên repo cá nhân, tạo một yêu cầu gửi tới repo gốc để chủ dự án (owner) review code và chấp nhận (accept) merge bài nộp vào dự án chung.
+3. **Pull Request (PR):** Sau khi hoàn thành công việc và push lên repo cá nhân, tạo một yêu cầu gửi tới repo gốc để owner review code và accept merge bài nộp vào dự án chung.
 
 ---
 
@@ -269,9 +293,9 @@ git fetch origin
    git add <file_xử_lý_conflict>
    git commit -m "Fix merge conflict"
    ```
-
-> **Minh chứng thực hành:**
-> ![Thực hành giải quyết Merge Conflict](./images/04-merge-conflict-vscode.png)
+>![alt text](image-26.png)
+>![alt text](image-27.png)
+>![alt text](image-28.png)
 
 ---
 
@@ -286,7 +310,7 @@ git fetch origin
   # Kiểm tra phiên bản hiện tại đang cách mốc tag gần nhất bao nhiêu commit:
   git describe
   ```
-
+>![alt text](image-29.png)
 ---
 
 ## 18. Cất tạm công việc với Git Stash
@@ -300,7 +324,7 @@ git fetch origin
   # Lấy lại code từ stash ra để tiếp tục làm việc:
   git stash pop
   ```
-
+>![alt text](image-30.png)
 ---
 
 ## 19. Tối ưu lịch sử Commit với Rebase và Squash
@@ -308,13 +332,14 @@ git fetch origin
 - **Mục đích:** Khi làm việc, bạn tạo ra quá nhiều commit nháp lẻ tẻ. Rebase và Squash giúp gộp nhiều commit nhỏ thành một commit duy nhất cho lịch sử đẹp đẽ và chuyên nghiệp.
 - **Cú pháp:**
   ```bash
-  # Mở giao diện tương tác để gộp n commit gần nhất:
+  # Mở giao diện tương tác để gộp n commit gần nhất,Khi làm bài tập hoặc tính năng, bạn hay commit lặt vặt (như "sửa lại logo", "fix lỗi typo", "test code"). Trước khi nộp bài hoặc push lên GitHub, bạn dùng lệnh này để gộp 3–4 commit rác đó thành 1 commit duy nhất
   git rebase -i HEAD~n
 
-  # Rebase nhánh hiện tại lên đầu nhánh main:
+  # Rebase nhánh hiện tại lên đầu nhánh main,Khi làm việc nhóm, trong lúc bạn đang code nhánh riêng thì nhánh main đã có người khác cập nhật code mới. Bạn chạy lệnh này để kéo code mới từ main về nhánh mình.
   git rebase main
   ```
-
+>![alt text](image-31.png)
+>![alt text](image-32.png)
 ---
 
 ## 20. Tạo phím tắt lệnh với Git Alias
@@ -330,21 +355,21 @@ git config --global alias.co checkout
 # Tạo phím tắt hiển thị log đẹp:
 git config --global alias.lg "log --oneline --graph --decorate"
 ```
-
+>![alt text](image-33.png)
 ---
 
 ## 21. Khôi phục dữ liệu với Git Reflog
 
 - **Công dụng:** `git reflog` ghi lại mọi hoạt động thao tác con trỏ HEAD từng diễn ra trên Git (bao gồm cả các commit đã bị `reset --hard` hoặc nhánh đã lỡ xóa nhầm).
 - **Cách khôi phục:** Tra cứu tọa độ commit hash cũ trong reflog, sau đó dùng `git reset` hoặc `git checkout` về tọa độ đó để cứu lại dữ liệu.
+git reflog giống như một nút "Undo" thần kỳ hay một cỗ máy thời gian của Git. Nó lưu lại mọi thao tác bạn từng làm trên máy local, ngay cả khi bạn lỡ tay xóa mất commit hay làm mất code.
+git reflog: In ra toàn bộ lịch sử thao tác của con trỏ HEAD (vừa làm gì, chuyển nhánh nào, commit gì, reset lúc nào)
 
 ```bash
 git reflog
 git reset --hard HEAD@{1}
 ```
 
-> **Minh chứng thực hành:**
-> ![Tra cứu nhật ký git reflog](./images/05-git-reflog.png)
 
 ---
 

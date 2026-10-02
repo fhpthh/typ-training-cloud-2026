@@ -31,3 +31,27 @@
 
 ___
 ## 3. CÀI ĐẶT GIT VÀ CẤU HÌNH BAN ĐẦU
+Sử dụng SSH key giúp xác thực an toàn và không cần nhập lại mật khẩu mỗi khi push hoặc pull code
+```bash
+git --version
+Output: git version 2.54.0.windows.1
+```
+
+### 3.2 CẤU HÌNH THÔNG TIN NGƯỜI DÙNG
+Khi tạo một commit, Git sẽ gắn thông tin tác giả vào commit đó, chạy các lệnh để gán nhãn thông tin cá nhân
+```bash
+git config --global user.name "LÊ TIẾN DŨNG"
+git config --global user.email "ledung85499@gmail.com"
+```
+
+### 3.3 Cấu hình SSSH KEY
+Sử dụng SSH KEY để xác thực an toàn và không cần nhập lại mật khẩu mỗi khi đẩy hoặc kéo code về
+
+-**Public Key đã khởi tạo**
+```bash
+AAAAC3NzaC1lZDI1NTE5AAAAIH0PYQ7AXUrYo1xoWUuz7WTYoNjV8YtigR3/ghm+tC02 ledung85499@gmail.com
+```
+
+-**
+
+
