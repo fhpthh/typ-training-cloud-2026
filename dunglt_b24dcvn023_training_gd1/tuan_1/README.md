@@ -17,6 +17,13 @@
   - **Chuyển nhánh siêu nhẹ:** Nhánh trong Git thực chất chỉ là một con trỏ dung lượng 41 byte trỏ tới một commit. Việc chuyển nhánh diễn ra tức thì.
   - **Tính bảo mật & toàn vẹn:** Sử dụng mã hóa SHA-1 để đảm bảo dữ liệu không bị hỏng hoặc bị chỉnh sửa lén lút mà không bị phát hiện.
 
+
+| Tiêu chí | Git | SVN (Subversion) | Mercurial (Hg) |
+| :--- | :--- | :--- | :--- |
+| **Mô hình kiến trúc** | **Phân tán (DVCS):** Mỗi máy local chứa full lịch sử dự án. | **Tập trung (CVCS):** Chỉ máy chủ trung tâm lưu giữ toàn bộ lịch sử. | **Phân tán (DVCS):** Mỗi máy local chứa full lịch sử dự án. |
+| **Lưu trữ dữ liệu** | **Snapshots:** Lưu ảnh chụp trạng thái toàn bộ dự án tại thời điểm commit. | **Deltas:** Lưu vết sự thay đổi qua từng phiên bản. | **Changesets:** Lưu các tập hợp thay đổi dựa trên delta. |
+| **Tốc độ & Ngoại tuyến** | **Rất nhanh:** Hầu hết thao tác thực hiện offline ngay trên máy local. | **Chậm hơn:** Phải kết nối mạng tới Server cho mỗi commit/log/checkout. | **Nhanh:** Hoạt động offline tương tự Git. |
+| **Quản lý Nhánh (Branching)** | **Siêu nhẹ & Nhanh:** Nhánh chỉ là con trỏ dung lượng 41 bytes trỏ tới commit. | **Nặng & Chậm:** Mỗi nhánh tạo ra là một bản copy toàn bộ thư mục code. | **Tương đối đơn giản:** Nhưng tạo nhánh ít linh hoạt hơn Git. |
 ---
 
 ## 2. So sánh Git và GitHub / GitLab / Bitbucket
@@ -50,13 +57,23 @@ git config --global user.email "ledung85499@gmail.com"
 ```
 
 ### 3.3. Cấu hình SSH Key
-Sử dụng SSH Key giúp xác thực an toàn và không cần nhập lại mật khẩu/token mỗi khi push hoặc pull code.
 
-- **Public Key đã khởi tạo :**
-  ```text
-   AAAAC3NzaC1lZDI1NTE5AAAAIH0PYQ7AXUrYo1xoWUuz7WTYoNjV8YtigR3/ghm+tC02 ledung85499@gmail.com
+Sử dụng SSH Key giúp xác thực an toàn và không cần nhập lại mật khẩu/token mỗi khi push hoặc pull code.
+  - **Bước 1: Chạy câu lệnh khởi tạo SSH Key mới (sử dụng thuật toán ed25519):**
+  ```bash
+  ssh-keygen -t ed25519 -C "ledung85499@gmail.com"
   ```
-- **Kiểm tra kết nối SSH tới GitHub:**
+
+- **Bước 2: Lấy nội dung Public Key để dán vào GitHub (Settings -> SSH and GPG keys):**
+  ```bash
+  cat ~/.ssh/id_ed25519.pub
+  ```
+  *Public Key thu được có dạng:*
+  ```text
+  ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIH0PYQ7AXUrYo1xoWUuz7WTYoNjV8YtigR3/ghm+tC02 ledung85499@gmail.com
+  ```
+
+- **Bước 3: Kiểm tra kết nối SSH tới GitHub:**
   ```bash
   ssh -T git@github.com
   ```
@@ -84,7 +101,15 @@ git clone <URL_REPOSITORY>
 > ![alt text](image-4.png)
 
 ### 4.3. Cấu trúc thư mục `.git`
-Thư mục `.git` chứa toàn bộ metadata, lịch sử commit, thông tin branch, con trỏ `HEAD` và các file cấu hình (`config`) của repository.
+Thư mục `.git` chứa toàn bộ metadata, lịch sử commit, thông tin branch, con trỏ `HEAD` và các file cấu hình của repository.
+Thư mục `.git` nằm ở gốc dự án chứa toàn bộ dữ liệu quản lý của Git, bao gồm các thành phần cốt lõi:
+- **`HEAD`:** Là một file con trỏ chỉ định branch hoặc commit hiện tại mà Working Directory đang checkout.
+- **`config`:** File chứa toàn bộ cấu hình riêng của Repository này (ví dụ: đường dẫn remote URL, thiết lập branch.
+- **`objects/`:** Cơ sở dữ liệu lưu trữ toàn bộ nội dung file, thư mục, thông tin commit
+- **`refs/`:** Thư mục chứa các con trỏ trỏ tới các commit cụ thể:
+  - `refs/heads/`: Chứa các nhánh ở local .
+  - `refs/tags/`: Chứa các nhãn phiên bản.
+  - `refs/remotes/`: Chứa trạng thái các nhánh trên remote.
 
 ---
 
@@ -160,10 +185,8 @@ git blame main.cpp
 ## 8. Hủy bỏ thay đổi (Undo Operations)
 
 ### 8.1. `git checkout` / `git restore`
-Khi vừa sửa file ở máy local nhưng chưa đưa vào  (`git add`), lệnh này sẽ hủy bỏ các thay đổi và đưa file trở lại trạng thái sạch sẽ như commit gần nhất.
-```bash
-git restore <tên_file>
-```
+- **`git checkout -- <file>`** hoặc **`git restore <file>`**: Dùng để loại bỏ các sửa đổi chưa staging ở Working Directory, đưa file quay về trạng thái sạch sẽ của commit gần nhất.
+- **`git checkout <commit_id>`**: Chuyển con trỏ HEAD về xem lại trạng thái của toàn bộ dự án tại mốc commit trong quá khứ.
 >![alt text](image-11.png)
 
 
@@ -171,20 +194,26 @@ git restore <tên_file>
 Xóa sạch hoặc tua ngược lịch sử commit đã làm trước đó, quay ngược thời gian về mốc chỉ định.
 ```bash
 # Giữ lại các thay đổi ở môi trường làm việc
-git reset --soft <commit-id>
-
->![alt text](image-12.png)
-# Xóa bỏ hoàn toàn mọi thay đổi sau mốc commit đó:
-git reset --hard <commit_id>
+Di chuyển con trỏ branch quay lại một commit cũ:
+- `git reset --soft <commit_id>`: Giữ lại tất cả thay đổi ở Staging Area.
+- `git reset --mixed <commit_id>`: Giữ lại thay đổi ở mặc định.
+- `git reset --hard <commit_id>`: Xóa sạch hoàn toàn mọi thay đổi sau mốc commit đó.
 ```
-![alt text](image-13.png)
+>![alt text](image-12.png)
+>![alt text](image-13.png)
 
 ### 8.3. `git revert`
-Tạo ra một commit mới có nội dung đảo ngược lại commit lỗi trước đó. Cách này giúp vô hiệu hóa lỗi nhưng vẫn giữ nguyên lịch sử commit cũ (an toàn khi làm việc nhóm).
+Tạo ra một commit mới có nội dung đảo ngược lại commit lỗi trước đó. Cách này giúp vô hiệu hóa lỗi nhưng vẫn giữ nguyên lịch sử commit cũ.
 ```bash
-git revert <commit_id>
+git revert <commit_id>:Tạo ra một commit mới có nội dung triệt tiêu/đảo ngược lại commit lỗi trước đó mà không làm mất lịch sử cũ.
 ```
 >![alt text](image-14.png)
+
+| Tiêu chí | `git reset` | `git revert` |
+| :--- | :--- | :--- |
+| **Bản chất** | Xóa/thay đổi lịch sử commit cũ. | Giữ nguyên lịch sử cũ, tạo thêm commit mới để đảo ngược. |
+| **Môi trường sử dụng** | **Chỉ dùng ở Local Branch:** Khi code chưa được push lên remote server. | **Dùng cho Remote / Shared Branch:** Khi code lỗi đã push lên branch chung (`main`, `develop`). |
+| **Độ an toàn làm việc nhóm** | **Nguy hiểm:** Nếu reset branch đã push sẽ gây lệch lịch sử đối với các thành viên khác. | **An toàn:** Không gây xung đột lịch sử code của dự án nhóm. |
 ---
 
 ## 9. Quản lý file rác với `.gitignore`
@@ -195,7 +224,7 @@ File `.gitignore` được tạo ra để khai báo danh sách các file/thư m�
 
 ---
 
-## 10 & 11. Quản lý Nhánh
+## 10. Quản lý Nhánh
 
 ### 10.1. Khái niệm Branch
 - **Branch (Nhánh):** Là một bản sao độc lập của mã nguồn tại một thời điểm. Cho phép lập trình viên tách ra làm việc riêng biệt mà không làm ảnh hưởng đến nhánh chính (`main`).
@@ -247,7 +276,8 @@ Là tập hợp các quy tắc chuẩn khi làm việc nhóm để quản lý c�
 - **`develop`:** Nhánh phát triển chung, tích hợp các tính năng mới từ các dev trước khi đưa lên nhánh `main`.
 - **`feature/*`:** Nhánh riêng do từng dev tạo ra để làm một tính năng cụ thể (ví dụ: `feature/login`, `feature/payment`).
 - **`hotfix/*`:** Nhánh dùng để xử lý khẩn cấp các lỗi phát sinh trực tiếp trên môi trường Production.
-
+Mô hình **Git Flow** tiêu chuẩn quản lý các nhánh dự án bao gồm:
+-**`release/*`:** Nhánh chuẩn bị phát hành phiên bản mới, tách ra từ `develop` khi sắp đến hạn ra mắt. Dùng để tester kiểm thử cuối cùng và fix các bug nhỏ trước khi gộp song song vào cả `main` và `develop`.
 ---
 
 ## 14. Thao tác với Remote Repository
