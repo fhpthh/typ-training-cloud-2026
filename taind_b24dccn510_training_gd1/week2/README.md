@@ -432,3 +432,5 @@ echo "Hello, World!"  # In ra màn hình dòng chữ "Hello, World!"
         - Sử dụng lệnh `crontab -e` để mở trình soạn thảo và chỉnh sửa cron jobs cho người dùng hiện tại.
         - Sau khi chỉnh sửa, lưu và thoát khỏi trình soạn thảo để áp dụng các thay đổi.
 ## Phần 9. Thực hành tổng hợp
+
+- [Mô phỏng giả lập](Simulation.md)
