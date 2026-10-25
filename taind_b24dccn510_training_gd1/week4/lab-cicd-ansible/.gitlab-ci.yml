@@ -1,0 +1,117 @@
+# ==============================================================================
+# GitLab CI/CD Pipeline - End-to-End CI/CD + DevSecOps + Ansible Deployment
+# Dự án: Cloud Note App (3-Tier: Nginx Frontend + Flask Backend API + MySQL 8.0)
+# Tác giả: Nguyễn Đức Tài - B24DCCN510 (Skyboy12)
+# ==============================================================================
+
+stages:
+  - test_and_sast
+  - build
+  - security_scan
+  - deploy
+
+variables:
+  DOCKER_REGISTRY: "docker.io"
+  IMAGE_PREFIX: "${REGISTRY_USER}/cloud-note"
+  APP_TAG: "2.0.${CI_PIPELINE_IID}"
+  FALLBACK_TAG: "2.0.0"
+  APP_PATH: "taind_b24dccn510_training_gd1/week3/app"
+  LAB_PATH: "taind_b24dccn510_training_gd1/week4/lab-cicd-ansible"
+  ANSIBLE_PATH: "${LAB_PATH}/ansible"
+
+# ------------------------------------------------------------------------------
+# STAGE 1: SECRET SCANNING (GITLEAKS), SAST (BANDIT) & AUTOMATED UNIT TESTS
+# ------------------------------------------------------------------------------
+gitleaks_secret_scan:
+  stage: test_and_sast
+  image:
+    name: zricethezav/gitleaks:latest
+    entrypoint: [""]
+  script:
+    - echo "=== [DevSecOps] Quet lo lot Secret trong Git Repository bang Gitleaks ==="
+    - gitleaks detect --source="." --config="${LAB_PATH}/.gitleaks.toml" --verbose --redact
+
+sast_and_unit_test:
+  stage: test_and_sast
+  image: python:3.11-slim
+  script:
+    - echo "=== [DevSecOps] Cai dat thu vien & cong cu SAST (Bandit, Flake8) ==="
+    - pip install --no-cache-dir -r ${APP_PATH}/backend/requirements.txt bandit flake8
+    - echo "=== [SAST] Phan tich bao mat ma nguon tinh bang Bandit ==="
+    - bandit -r ${APP_PATH}/backend -ll -ii
+    - echo "=== [CI] Chay Automated API Integration Tests (SQLite Standalone Mode) ==="
+    - export STANDALONE_MODE=1
+    - |
+      python -c "
+      import sys
+      sys.path.insert(0, '${APP_PATH}/backend')
+      import app
+      app.init_db()
+      client = app.app.test_client()
+      assert client.get('/health').status_code == 200
+      res = client.post('/api/notes', json={'title': 'CI Test', 'content': 'Passed', 'category': 'DevSecOps'})
+      assert res.status_code == 201
+      print('Automated Tests Passed Successfully!')
+      "
+
+# ------------------------------------------------------------------------------
+# STAGE 2: BUILD CONTAINER IMAGES (FRONTEND & BACKEND)
+# ------------------------------------------------------------------------------
+build_container_images:
+  stage: build
+  image: docker:24.0.5
+  script:
+    - echo "=== [CI] Build Multi-stage Docker Images cho Backend & Frontend ==="
+    - docker build -t ${IMAGE_PREFIX}-backend:${APP_TAG} ${APP_PATH}/backend
+    - docker build -t ${IMAGE_PREFIX}-frontend:${APP_TAG} ${APP_PATH}/frontend
+
+# ------------------------------------------------------------------------------
+# STAGE 3: CONTAINER IMAGE SCANNING (TRIVY SECURITY GATE) & PUSH TO REGISTRY
+# ------------------------------------------------------------------------------
+trivy_scan_and_push:
+  stage: security_scan
+  image: docker:24.0.5
+  before_script:
+    - apk add --no-cache curl
+    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+  script:
+    - echo "=== [DevSecOps] Quet lo hong CVE tren Container Images bang Trivy ==="
+    - trivy image --ignorefile ${LAB_PATH}/.trivyignore --severity CRITICAL --ignore-unfixed --exit-code 1 ${IMAGE_PREFIX}-backend:${APP_TAG}
+    - trivy image --ignorefile ${LAB_PATH}/.trivyignore --severity CRITICAL --ignore-unfixed --exit-code 1 ${IMAGE_PREFIX}-frontend:${APP_TAG}
+    - echo "=== [CD] Dang nhap & Push Images len Container Registry ==="
+    - echo "${REGISTRY_PASSWORD}" | docker login ${DOCKER_REGISTRY} -u "${REGISTRY_USER}" --password-stdin
+    - docker push ${IMAGE_PREFIX}-backend:${APP_TAG}
+    - docker push ${IMAGE_PREFIX}-frontend:${APP_TAG}
+
+# ------------------------------------------------------------------------------
+# STAGE 4: AUTOMATED DEPLOYMENT LÊN TARGET LINUX VM BẰNG ANSIBLE
+# ------------------------------------------------------------------------------
+deploy_to_vm_ansible:
+  stage: deploy
+  image: cytopia/ansible:latest-tools
+  before_script:
+    - mkdir -p ~/.ssh
+    - echo "${SSH_PRIVATE_KEY}" | tr -d '\r' > ~/.ssh/id_ed25519_ansible
+    - chmod 600 ~/.ssh/id_ed25519_ansible
+  script:
+    - echo "=== [CD] Trien khai ung dung len Target Container VM bang Ansible Playbook ==="
+    - cd ${ANSIBLE_PATH}
+    - |
+      ansible-playbook -i inventory/hosts.ini deploy.yml \
+        -e "ansible_host=${TARGET_VM_IP}" \
+        -e "backend_image=${IMAGE_PREFIX}-backend:${APP_TAG}" \
+        -e "frontend_image=${IMAGE_PREFIX}-frontend:${APP_TAG}" \
+        -e "db_password=${DB_PASSWORD}" \
+        -e "db_root_password=${DB_ROOT_PASSWORD}" || {
+          echo "=== [ROLLBACK] Deploy that bai! Tu dong Rollback ve ban on dinh (${FALLBACK_TAG}) ==="
+          ansible-playbook -i inventory/hosts.ini deploy.yml \
+            -e "ansible_host=${TARGET_VM_IP}" \
+            -e "backend_image=${IMAGE_PREFIX}-backend:${FALLBACK_TAG}" \
+            -e "frontend_image=${IMAGE_PREFIX}-frontend:${FALLBACK_TAG}" \
+            -e "db_password=${DB_PASSWORD}" \
+            -e "db_root_password=${DB_ROOT_PASSWORD}"
+          exit 1
+        }
+  only:
+    - main
+

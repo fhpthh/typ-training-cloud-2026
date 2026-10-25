@@ -1,0 +1,16 @@
+# ==============================================================================
+# Cấu hình Gitleaks cho dự án TYP Cloud Training
+# ==============================================================================
+title = "Gitleaks Configuration - TYP Cloud Training Week 4"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Bỏ qua các biến mật khẩu minh họa trong tài liệu học tập Markdown và file mẫu"
+paths = [
+    '''(.*?)\.md$''',
+    '''taind_b24dccn510_training_gd1/week3/app/\.env$''',
+    '''taind_b24dccn510_training_gd1/week3/app/backend/app\.py$'''
+]
+

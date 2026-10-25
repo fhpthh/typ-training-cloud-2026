@@ -1,0 +1,25 @@
+---
+# ==============================================================================
+# Master Playbook: Triển khai tự động hệ thống Cloud Note App (3-Tier)
+# Chạy bởi CI/CD Runner (GitLab CI / Jenkins) hoặc từ Ansible Control Node
+# ==============================================================================
+- name: Triển khai tự động hạ tầng Docker & Ứng dụng Cloud Note App 3-Tier
+  hosts: app_servers
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Hiển thị thông tin Target Linux VM trước khi triển khai
+      ansible.builtin.debug:
+        msg:
+          - "Target Hostname : {{ ansible_facts['hostname'] }}"
+          - "Operating System: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}"
+          - "IPv4 Address    : {{ ansible_facts['default_ipv4']['address'] | default(ansible_host) }}"
+
+  roles:
+    - role: docker_setup
+      tags: [docker, setup]
+
+    - role: cloud_note_deploy
+      tags: [deploy, app]
+

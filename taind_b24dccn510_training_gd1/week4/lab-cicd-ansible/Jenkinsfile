@@ -1,0 +1,137 @@
+// =============================================================================
+// Jenkins Declarative Pipeline - End-to-End CI/CD + DevSecOps + Ansible
+// Dự án: Cloud Note App (3-Tier: Nginx Frontend + Flask Backend API + MySQL 8.0)
+// Tác giả: Nguyễn Đức Tài - B24DCCN510 (Skyboy12)
+// =============================================================================
+
+pipeline {
+    agent any
+
+    environment {
+        REGISTRY_USER   = credentials('docker-hub-username')
+        REGISTRY_PASS   = credentials('docker-hub-password')
+        DB_PASSWORD     = credentials('mysql-app-password')
+        DB_ROOT_PASS    = credentials('mysql-root-password')
+        TARGET_VM_IP    = credentials('target-vm-ip')
+        IMAGE_PREFIX    = "${REGISTRY_USER}/cloud-note"
+        APP_TAG         = "2.0.${BUILD_NUMBER}"
+        FALLBACK_TAG    = "2.0.0"
+        APP_PATH        = "taind_b24dccn510_training_gd1/week3/app"
+        LAB_PATH        = "taind_b24dccn510_training_gd1/week4/lab-cicd-ansible"
+        ANSIBLE_PATH    = "${LAB_PATH}/ansible"
+    }
+
+    stages {
+        stage('1. Secret Scanning (Gitleaks)') {
+            steps {
+                echo '=== [DevSecOps] Quet lo lot Secret trong kho Git bang Gitleaks ==='
+                sh '''
+                    docker run --rm -v "$(pwd):/path" zricethezav/gitleaks:latest \
+                        detect --source="/path" --config="/path/${LAB_PATH}/.gitleaks.toml" --verbose --redact
+                '''
+            }
+        }
+
+        stage('2. SAST (Bandit) & Automated Tests') {
+            steps {
+                echo '=== [DevSecOps & CI] Phan tich ma nguon tinh SAST va chay Unit Tests ==='
+                sh '''
+                    python3 -m venv .ci_venv
+                    . .ci_venv/bin/activate
+                    pip install --upgrade pip --quiet
+                    pip install --quiet -r ${APP_PATH}/backend/requirements.txt bandit flake8
+                    bandit -r ${APP_PATH}/backend -ll -ii
+                    STANDALONE_MODE=1 python3 -c "
+import sys
+sys.path.insert(0, '${APP_PATH}/backend')
+import app
+app.init_db()
+client = app.app.test_client()
+assert client.get('/health').status_code == 200
+res = client.post('/api/notes', json={'title': 'Jenkins CI', 'content': 'Passed', 'category': 'CI/CD'})
+assert res.status_code == 201
+print('All Automated API Tests Passed!')
+"
+                    rm -rf .ci_venv
+                '''
+            }
+        }
+
+        stage('3. Build Container Images') {
+            steps {
+                echo '=== [CI] Dong goi Docker Images cho Backend & Frontend ==='
+                sh '''
+                    docker build -t ${IMAGE_PREFIX}-backend:${APP_TAG} ${APP_PATH}/backend
+                    docker build -t ${IMAGE_PREFIX}-frontend:${APP_TAG} ${APP_PATH}/frontend
+                '''
+            }
+        }
+
+        stage('4. Container Security Gate (Trivy) & Push') {
+            steps {
+                echo '=== [DevSecOps] Quet lo hong CVE tren Docker Images va Push len Registry ==='
+                sh '''
+                    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+                        -v "$(pwd)/${LAB_PATH}/.trivyignore:/.trivyignore:ro" \
+                        aquasec/trivy:latest image --ignorefile /.trivyignore \
+                        --severity CRITICAL --ignore-unfixed --exit-code 1 ${IMAGE_PREFIX}-backend:${APP_TAG}
+
+                    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+                        -v "$(pwd)/${LAB_PATH}/.trivyignore:/.trivyignore:ro" \
+                        aquasec/trivy:latest image --ignorefile /.trivyignore \
+                        --severity CRITICAL --ignore-unfixed --exit-code 1 ${IMAGE_PREFIX}-frontend:${APP_TAG}
+
+                    echo "${REGISTRY_PASS}" | docker login -u "${REGISTRY_USER}" --password-stdin
+                    docker push ${IMAGE_PREFIX}-backend:${APP_TAG}
+                    docker push ${IMAGE_PREFIX}-frontend:${APP_TAG}
+                '''
+            }
+        }
+
+        stage('5. Automated Deploy via Ansible') {
+            steps {
+                echo '=== [CD] Trien khai tu dong len Target Container VM bang Ansible ==='
+                sshagent(credentials: ['vm-ssh-private-key']) {
+                    sh '''
+                        cd ${ANSIBLE_PATH}
+                        ansible-playbook -i inventory/hosts.ini deploy.yml \
+                            -e "ansible_host=${TARGET_VM_IP}" \
+                            -e "backend_image=${IMAGE_PREFIX}-backend:${APP_TAG}" \
+                            -e "frontend_image=${IMAGE_PREFIX}-frontend:${APP_TAG}" \
+                            -e "db_password=${DB_PASSWORD}" \
+                            -e "db_root_password=${DB_ROOT_PASS}"
+                    '''
+                }
+            }
+            post {
+                failure {
+                    echo "=== [ROLLBACK] Deploy hoac Healthcheck that bai! Tu dong Rollback ve phien ban on dinh (${FALLBACK_TAG}) ==="
+                    sshagent(credentials: ['vm-ssh-private-key']) {
+                        sh '''
+                            cd ${ANSIBLE_PATH}
+                            ansible-playbook -i inventory/hosts.ini deploy.yml \
+                                -e "ansible_host=${TARGET_VM_IP}" \
+                                -e "backend_image=${IMAGE_PREFIX}-backend:${FALLBACK_TAG}" \
+                                -e "frontend_image=${IMAGE_PREFIX}-frontend:${FALLBACK_TAG}" \
+                                -e "db_password=${DB_PASSWORD}" \
+                                -e "db_root_password=${DB_ROOT_PASS}"
+                        '''
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker image prune -f || true'
+        }
+        success {
+            echo "Pipeline thanh cong! Ung dung da duoc trien khai tai http://${TARGET_VM_IP}:8080"
+        }
+        failure {
+            echo "Pipeline that bai! Kiem tra log Security Gate hoac trang thai Rollback."
+        }
+    }
+}
+

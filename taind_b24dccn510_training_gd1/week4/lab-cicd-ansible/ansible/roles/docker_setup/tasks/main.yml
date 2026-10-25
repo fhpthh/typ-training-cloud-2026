@@ -1,0 +1,39 @@
+---
+# ==============================================================================
+# Role: docker_setup - Tự động cài đặt và cấu hình Docker Engine & Compose V2
+# ==============================================================================
+
+- name: 1. Cập nhật APT cache và cài đặt các gói phụ thuộc cơ bản
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: 2. Kiểm tra xem Docker Engine đã được cài đặt trên VM chưa
+  ansible.builtin.command: docker --version
+  register: docker_installed
+  ignore_errors: true
+  changed_when: false
+
+- name: 3. Cài đặt Docker Engine & Docker Compose V2 chính thức nếu chưa có
+  ansible.builtin.shell: |
+    curl -fsSL https://get.docker.com | sh
+  when: docker_installed.rc != 0
+
+- name: 4. Đảm bảo dịch vụ Docker luôn hoạt động và khởi động cùng hệ thống
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: 5. Thêm user vận hành vào group docker để chạy lệnh không cần sudo
+  ansible.builtin.user:
+    name: "{{ ansible_user | default('skyboy12') }}"
+    groups: docker
+    append: true
+

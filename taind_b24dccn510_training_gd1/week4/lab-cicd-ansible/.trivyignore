@@ -1,0 +1,8 @@
+# ==============================================================================
+# Trivy Ignore File - Quản lý ngoại lệ False Positive / Unpatched CVE có kiểm soát
+# Mỗi CVE bỏ qua cần ghi rõ lý do kỹ thuật và thời hạn rà soát lại (exp:YYYY-MM-DD)
+# ==============================================================================
+
+# Ví dụ: Bỏ qua CVE mức thấp trong gói thư viện chuẩn chưa ảnh hưởng tới runtime
+# CVE-2024-00000 exp:2026-12-31
+

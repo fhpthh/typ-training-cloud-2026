@@ -1,0 +1,9 @@
+---
+# ==============================================================================
+# Handlers cho Role: cloud_note_deploy
+# ==============================================================================
+- name: Restart Cloud Note Stack
+  ansible.builtin.command:
+    cmd: docker compose up -d --force-recreate
+    chdir: "{{ deploy_dir }}"
+

@@ -1,0 +1,20 @@
+---
+# ==============================================================================
+# Defaults cho Role: cloud_note_deploy (Độ ưu tiên thấp nhất, dễ ghi đè qua -e)
+# ==============================================================================
+deploy_dir: "/home/skyboy12/app"
+frontend_port: 8080
+backend_port: 5000
+
+frontend_image: "skyboy12/cloud-note-frontend:2.0.0"
+backend_image: "skyboy12/cloud-note-backend:2.0.0"
+fallback_frontend_image: "skyboy12/cloud-note-frontend:2.0.0"
+fallback_backend_image: "skyboy12/cloud-note-backend:2.0.0"
+mysql_image: "mysql:8.0"
+
+db_host: "db"
+db_name: "notesdb"
+db_user: "noteuser"
+db_password: "SecurePassword2026@"
+db_root_password: "RootAdminSecret2026@"
+

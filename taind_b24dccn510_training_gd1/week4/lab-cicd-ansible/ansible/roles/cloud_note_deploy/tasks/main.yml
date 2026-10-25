@@ -1,0 +1,86 @@
+---
+# ==============================================================================
+# Tasks cho Role: cloud_note_deploy - Triển khai 3-Tier Containers & Healthcheck
+# ==============================================================================
+
+- name: 1. Tạo thư mục triển khai ứng dụng trên Target Container VM
+  ansible.builtin.file:
+    path: "{{ deploy_dir }}"
+    state: directory
+    owner: "{{ ansible_user | default('skyboy12') }}"
+    group: "{{ ansible_user | default('skyboy12') }}"
+    mode: "0755"
+
+- name: 2. Sinh file biến môi trường .env từ Jinja2 Template (Quyền 0600 bảo mật)
+  ansible.builtin.template:
+    src: .env.j2
+    dest: "{{ deploy_dir }}/.env"
+    owner: "{{ ansible_user | default('skyboy12') }}"
+    group: "{{ ansible_user | default('skyboy12') }}"
+    mode: "0600"
+  notify: Restart Cloud Note Stack
+
+- name: 3. Triển khai Stack 3-Tier, kiểm tra Healthcheck và Tự động Rollback nếu lỗi
+  block:
+    - name: 3.1. Sinh file điều phối compose.yaml từ Jinja2 Template
+      ansible.builtin.template:
+        src: compose.yaml.j2
+        dest: "{{ deploy_dir }}/compose.yaml"
+        owner: "{{ ansible_user | default('skyboy12') }}"
+        group: "{{ ansible_user | default('skyboy12') }}"
+        mode: "0644"
+      notify: Restart Cloud Note Stack
+
+    - name: 3.2. Kéo (Pull) Docker Images mới nhất và khởi chạy hệ thống 3 Containers
+      ansible.builtin.command:
+        cmd: docker compose up -d --pull always --remove-orphans
+        chdir: "{{ deploy_dir }}"
+      register: compose_up_result
+      changed_when: "'Started' in compose_up_result.stderr or 'Created' in compose_up_result.stderr or 'Recreated' in compose_up_result.stderr"
+
+    - name: 3.3. Chờ và xác thực Healthcheck của ứng dụng sau khi triển khai
+      ansible.builtin.uri:
+        url: "http://localhost:{{ frontend_port }}/health"
+        method: GET
+        return_content: true
+        status_code: 200
+      register: app_health
+      retries: 15
+      delay: 4
+      until: app_health.status == 200
+
+  rescue:
+    - name: "[ROLLBACK] Cảnh báo triển khai thất bại - Kích hoạt quy trình khôi phục tự động"
+      ansible.builtin.debug:
+        msg: "Triển khai bản mới thất bại! Đang tự động Rollback về bản ổn định ({{ fallback_backend_image }}, {{ fallback_frontend_image }})..."
+
+    - name: "[ROLLBACK] Khôi phục biến Image về phiên bản ổn định (Fallback)"
+      ansible.builtin.set_fact:
+        backend_image: "{{ fallback_backend_image }}"
+        frontend_image: "{{ fallback_frontend_image }}"
+
+    - name: "[ROLLBACK] Render lại compose.yaml với phiên bản ổn định"
+      ansible.builtin.template:
+        src: compose.yaml.j2
+        dest: "{{ deploy_dir }}/compose.yaml"
+        owner: "{{ ansible_user | default('skyboy12') }}"
+        group: "{{ ansible_user | default('skyboy12') }}"
+        mode: "0644"
+
+    - name: "[ROLLBACK] Khởi chạy lại 3 Containers với phiên bản ổn định"
+      ansible.builtin.command:
+        cmd: docker compose up -d --remove-orphans
+        chdir: "{{ deploy_dir }}"
+
+    - name: "[ROLLBACK] Đánh dấu Job thất bại sau khi đã Rollback an toàn"
+      ansible.builtin.fail:
+        msg: "Đã Rollback hệ thống về phiên bản ổn định thành công do bản mới không vượt qua Healthcheck!"
+
+- name: 4. Dọn dẹp các Docker Image cũ không còn sử dụng (Dangling Images)
+  ansible.builtin.command: docker image prune -f
+  changed_when: false
+
+- name: 5. Báo cáo trạng thái triển khai hoàn tất
+  ansible.builtin.debug:
+    msg: "Ứng dụng Cloud Note 3-Tier đã sẵn sàng tại cổng {{ frontend_port }}! Health: {{ app_health.json }}"
+
