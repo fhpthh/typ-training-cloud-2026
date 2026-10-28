@@ -1,9 +1,9 @@
 # Seminar Cloud-Native: Nền Tảng Kiến Trúc và Vận Hành Hệ Thống Hiện Đại
 
-> **Lưu ý**:
-    - **Tập trung vào kiến trúc và tư tưởng cốt lõi**: Giải thích rõ bài toán thực tế, luồng hoạt động và lý do công nghệ xuất hiện.
-    - **Khuyến khích có demo kết quả trực quan**: Nên chuẩn bị hình ảnh, video ngắn hoặc thao tác thực tế để minh họa cách hệ thống vận hành.
-    - **Sẵn sàng phản biện**: Thành viên trình bày phải hiểu rõ bản chất để trả lời với các câu hỏi từ các thành viên khác.
+**Lưu ý**:
+- **Tập trung vào kiến trúc và tư tưởng cốt lõi**: Giải thích rõ bài toán thực tế, luồng hoạt động và lý do công nghệ xuất hiện.
+- **Khuyến khích có demo kết quả trực quan**: Nên chuẩn bị hình ảnh, video ngắn hoặc thao tác thực tế để minh họa cách hệ thống vận hành.
+- **Sẵn sàng phản biện**: Thành viên trình bày phải hiểu rõ bản chất để trả lời với các câu hỏi từ các thành viên khác.
 
 ---
 ## Topic 1: Kubernetes Foundation
