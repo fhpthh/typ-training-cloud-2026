@@ -1,0 +1,35 @@
+---
+- name: Deploy Node.js container to Target VM
+  hosts: target_servers
+  become: true
+  vars:
+    app_image: "{{ IMAGE_NAME }}:{{ IMAGE_TAG }}"
+    app_container_name: typ-web-app
+  tasks:
+    - name: Ensure Docker engine is started
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Run app from desired image and wait for Docker HEALTHCHECK
+      community.docker.docker_container:
+        name: "{{ app_container_name }}"
+        image: "{{ app_image }}"
+        pull: always
+        state: healthy
+        healthy_wait_timeout: 120
+        restart_policy: unless-stopped
+        published_ports:
+          - "3000:3000"
+        env:
+          APP_VERSION: "{{ IMAGE_TAG }}"
+
+    - name: Verify HTTP response
+      ansible.builtin.uri:
+        url: http://127.0.0.1:3000/healthz
+        status_code: 200
+      register: health
+      until: health.status == 200
+      retries: 10
+      delay: 3

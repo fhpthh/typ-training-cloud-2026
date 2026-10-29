@@ -1,0 +1,126 @@
+pipeline {
+    agent any
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+    triggers {
+        pollSCM('* * * * *')
+    }
+    environment {
+        DOCKER_HUB_USER = 'vinhtung'
+        IMAGE_NAME      = "${DOCKER_HUB_USER}/docker-cloud-demo"
+        DOCKER_CONFIG   = "${WORKSPACE}/.docker-auth"
+        TARGET_VM_IP    = '10.97.0.118' 
+        APP_DIR         = 'tungnv_b23dckh130_training-gd1/week4/ci-cd-demo'
+        DOCKER_BUILDKIT = '1'
+    }
+    stages {
+        stage('1. Checkout') {
+            steps {
+                echo '=== 1. Kiem tra va lay ma nguon cung Git Tags tu Repository ==='
+                checkout scm
+                sh 'git fetch --tags || true'
+            }
+        }
+        stage('2. Docker Build') {
+            steps {
+                script {
+                    // Kiem tra commit co duoc gan Git Tag (vd: v1.1.0) hay khong
+                    def gitTag = sh(script: 'git describe --tags --exact-match 2>/dev/null || echo ""', returnStdout: true).trim()
+                    if (gitTag != '') {
+                        env.IMAGE_TAG = gitTag
+                    } else {
+                        env.IMAGE_TAG = "v1.0.${BUILD_NUMBER}"
+                    }
+                    echo "=== AP DUNG PHIEN BAN TAG: ${env.IMAGE_TAG} ==="
+
+                    def targetDir = fileExists(env.APP_DIR) ? env.APP_DIR : '.'
+                    dir(targetDir) {
+                        sh """
+                            docker build \
+                              -t "$IMAGE_NAME:${env.IMAGE_TAG}" \
+                              -t "$IMAGE_NAME:latest" \
+                              -f app/Dockerfile app/
+                        """
+                    }
+                }
+            }
+        }
+        stage('3. CI Health Check') {
+            steps {
+                echo "=== 3. Kiem tra Health Check noi bo container tren CI truoc khi Push (Tag: ${env.IMAGE_TAG}) ==="
+                sh """
+                    # Xoa container test cu neu con ton tai
+                    docker rm -f ci-test-container 2>/dev/null || true
+                    
+                    # Chay container test tam thoi tren port 3001
+                    docker run -d --name ci-test-container -p 3001:3000 "$IMAGE_NAME:${env.IMAGE_TAG}"
+                    
+                    # Cho 3 giay de app khoi dong
+                    sleep 3
+                    
+                    # Kiem tra endpoint /healthz noi bo tren Jenkins
+                    curl --fail --show-error --retry 3 --retry-delay 2 http://127.0.0.1:3001/healthz
+                    
+                    # Don dep container test sau khi PASS
+                    docker rm -f ci-test-container
+                """
+                echo '=== CI Health Check PASSED: Image hoat dong tot, san sang day len Registry! ==='
+            }
+            post {
+                always {
+                    sh 'docker rm -f ci-test-container 2>/dev/null || true'
+                }
+            }
+        }
+        stage('4. Docker Hub Push') {
+            steps {
+                echo "=== 4. Dang nhap va day anh len Docker Hub (Tag: ${env.IMAGE_TAG}) ==="
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DH_USER', passwordVariable: 'DH_TOKEN')]) {
+                    sh """
+                        set -eu
+                        mkdir -p "$DOCKER_CONFIG"
+                        echo "$DH_TOKEN" | docker login -u "$DH_USER" --password-stdin
+                        docker push "$IMAGE_NAME:${env.IMAGE_TAG}"
+                        docker push "$IMAGE_NAME:latest"
+                        docker logout || true
+                    """
+                }
+            }
+        }
+        stage('5. Deploy') {
+            steps {
+                echo "=== 5. Trien khai Container len Target VM (${TARGET_VM_IP}) voi Tag ${env.IMAGE_TAG} ==="
+                sshagent(credentials: ['target-vm-ssh-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=accept-new ubuntu@${TARGET_VM_IP} '
+                            sudo docker pull ${IMAGE_NAME}:${env.IMAGE_TAG}
+                            sudo docker stop typ-web-app 2>/dev/null || true
+                            sudo docker rm typ-web-app 2>/dev/null || true
+                            sudo docker run -d --name typ-web-app --restart unless-stopped -p 3000:3000 -e APP_VERSION=${env.IMAGE_TAG} ${IMAGE_NAME}:${env.IMAGE_TAG}
+                        '
+                    """
+                }
+            }
+        }
+        stage('6. Smoke Test') {
+            steps {
+                echo '=== 6. Kiem tra trang thai hoat dong thuc te tren Target VM ==='
+                sh "curl --fail --show-error --retry 5 --retry-delay 2 http://${TARGET_VM_IP}:3000/healthz"
+                sh "curl --fail --show-error http://${TARGET_VM_IP}:3000/"
+            }
+        }
+    }
+    post {
+        always {
+            sh 'rm -rf "$DOCKER_CONFIG" || true'
+        }
+        success {
+            echo "=== CI/CD THANH CONG: Phien ban ${env.IMAGE_TAG} da duoc build, test CI, push va deploy len Target VM! ==="
+        }
+        failure {
+            echo '=== CI/CD THAT BAI: Vui long kiem tra Console Output ==='
+        }
+    }
+}

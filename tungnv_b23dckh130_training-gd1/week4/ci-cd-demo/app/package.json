@@ -1,0 +1,12 @@
+{
+  "name": "docker-cloud-fullstack-demo",
+  "version": "1.0.0",
+  "description": "Full-Stack Web App for CI/CD Demo - Nguyen Vinh Tung B23DCKH130",
+  "private": true,
+  "scripts": {
+    "start": "node backend/server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

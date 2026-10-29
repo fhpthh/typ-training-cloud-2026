@@ -1,0 +1,108 @@
+pipeline {
+    agent any
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+    environment {
+        DOCKER_HUB_USER = 'vinhtung'  // Docker Hub username của bạn
+        IMAGE_NAME      = "${DOCKER_HUB_USER}/docker-cloud-demo"
+        IMAGE_TAG       = "${BUILD_NUMBER}"
+        DOCKER_CONFIG   = "${WORKSPACE}/.docker-auth"
+        TARGET_VM_IP    = '10.97.0.118'  // IP thực tế của Target VM
+        APP_DIR         = 'tungnv_b23dckh130_training-gd1/week4/ci-cd-demo'
+        DOCKER_BUILDKIT = '1'
+    }
+    stages {
+        stage('1. Checkout') {
+            steps {
+                echo '=== Kiem tra ma nguon tu Git Repository ==='
+                checkout scm
+            }
+        }
+        stage('2. Gitleaks') {
+            steps {
+                echo '=== Quet phat hien ro ri thong tin nhay cam (Gitleaks) ==='
+                script {
+                    def targetDir = fileExists(env.APP_DIR) ? env.APP_DIR : '.'
+                    dir(targetDir) {
+                        sh 'gitleaks detect --source . --no-git --redact --no-banner'
+                    }
+                }
+            }
+        }
+        stage('3. Docker Build') {
+            steps {
+                echo "=== Dong goi anh Docker phien ban ${IMAGE_TAG} ==="
+                script {
+                    def targetDir = fileExists(env.APP_DIR) ? env.APP_DIR : '.'
+                    dir(targetDir) {
+                        sh '''
+                            docker build --build-arg BUILDKIT_INLINE_CACHE=1 \
+                              -t "$IMAGE_NAME:$IMAGE_TAG" \
+                              -t "$IMAGE_NAME:latest" \
+                              -f app/Dockerfile app/
+                        '''
+                    }
+                }
+            }
+        }
+        stage('4. Trivy Gate') {
+            steps {
+                echo '=== Quet lo hong bao mat Container Image qua Trivy ==='
+                sh 'trivy image --severity HIGH,CRITICAL "$IMAGE_NAME:$IMAGE_TAG"'
+                sh 'trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed "$IMAGE_NAME:$IMAGE_TAG"'
+            }
+        }
+        stage('5. Docker Hub Push') {
+            steps {
+                echo '=== Dang nhap va day anh len Docker Hub Registry ==='
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DH_USER', passwordVariable: 'DH_TOKEN')]) {
+                    sh '''
+                        set -eu
+                        mkdir -p "$DOCKER_CONFIG"
+                        echo "$DH_TOKEN" | docker login -u "$DH_USER" --password-stdin
+                        docker push "$IMAGE_NAME:$IMAGE_TAG"
+                        docker push "$IMAGE_NAME:latest"
+                        docker logout || true
+                    '''
+                }
+            }
+        }
+        stage('6. Ansible Deploy') {
+            steps {
+                echo '=== Kich hoat Ansible Playbook trien khai len Target VM ==='
+                script {
+                    def targetDir = fileExists(env.APP_DIR) ? env.APP_DIR : '.'
+                    dir(targetDir) {
+                        sshagent(credentials: ['target-vm-ssh-key']) {
+                            sh '''
+                                ansible-galaxy collection install -r ansible/requirements.yml
+                                ansible-playbook -i ansible/inventory.ini ansible/deploy-docker.yml \
+                                  -e "IMAGE_NAME=$IMAGE_NAME IMAGE_TAG=$IMAGE_TAG"
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+        stage('7. Smoke Test') {
+            steps {
+                echo '=== Kiem tra trang thai hoat dong thuc te tren Target VM ==='
+                sh "curl --fail --show-error --retry 5 --retry-delay 2 http://${TARGET_VM_IP}:3000/healthz"
+                sh "curl --fail --show-error http://${TARGET_VM_IP}:3000/"
+            }
+        }
+    }
+    post {
+        always {
+            sh 'rm -rf "$DOCKER_CONFIG" || true'
+        }
+        success {
+            echo 'CI/CD thanh cong: image da duoc deploy va smoke test OK.'
+        }
+        failure {
+            echo 'CI/CD that bai: mo Console Output de xem stage loi.'
+        }
+    }
+}

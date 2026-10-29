@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevOps Dashboard - Nguyễn Vĩnh Tùng B23DCKH130</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-brand">
+        <div class="logo-badge">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
+          </svg>
+        </div>
+        <div>
+          <h1>PTIT Cloud Computing & DevOps</h1>
+          <p class="subtitle">Tuần 4: Hệ thống CI/CD Jenkins, Docker, Ansible & DevSecOps</p>
+        </div>
+      </div>
+      <div class="header-status">
+        <span class="status-indicator"></span>
+        <span class="status-text" id="system-status">HỆ THỐNG ĐANG HOẠT ĐỘNG</span>
+      </div>
+    </header>
+
+    <!-- Main Dashboard Grid -->
+    <main class="dashboard-grid">
+      <!-- Card 1: Student & Project Info -->
+      <section class="card card-student">
+        <div class="card-header">
+          <div class="card-icon">👨‍💻</div>
+          <h2>Thông Tin Sinh Viên & Đề Tài</h2>
+        </div>
+        <div class="card-body">
+          <div class="info-row">
+            <span class="info-label">Họ và tên:</span>
+            <span class="info-value highlight" id="student-name">Nguyễn Vĩnh Tùng</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Mã sinh viên:</span>
+            <span class="info-value badge-pill" id="student-id">B23DCKH130</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Chương trình:</span>
+            <span class="info-value">TYP Cloud Training 2026</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Đề tài:</span>
+            <span class="info-value">CI/CD Pipeline với Jenkins, Docker, Ansible & DevSecOps</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Phiên bản ứng dụng:</span>
+            <span class="info-value version-tag" id="app-version">v1.0.0</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card 2: Server Telemetry -->
+      <section class="card card-telemetry">
+        <div class="card-header">
+          <div class="card-icon">⚙️</div>
+          <h2>Thông Số Hạ Tầng Target VM</h2>
+        </div>
+        <div class="card-body">
+          <div class="metric-grid">
+            <div class="metric-box">
+              <span class="metric-title">Tên Hostname</span>
+              <span class="metric-data" id="host-name">Đang tải...</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-title">Nền tảng OS</span>
+              <span class="metric-data" id="host-platform">Đang tải...</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-title">RAM Sử dụng (RSS)</span>
+              <span class="metric-data" id="host-memory">-- MB</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-title">Thời gian Uptime</span>
+              <span class="metric-data" id="host-uptime">-- giây</span>
+            </div>
+          </div>
+          <div class="telemetry-footer">
+            <span>Runtime Engine: Node.js <strong id="node-ver">--</strong></span>
+            <span>Cổng dịch vụ: <strong>3000 (TCP)</strong></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card 3: CI/CD Pipeline Workflow Tracker -->
+      <section class="card card-pipeline full-width">
+        <div class="card-header">
+          <div class="card-icon">🔄</div>
+          <h2>Luồng Triển Khai CI/CD Pipeline</h2>
+        </div>
+        <div class="card-body">
+          <div class="pipeline-flow">
+            <div class="stage-item completed">
+              <div class="stage-badge">1</div>
+              <div class="stage-title">Checkout Code</div>
+              <div class="stage-desc">Kéo mã từ Git SCM</div>
+              <span class="stage-tag success">SUCCESS</span>
+            </div>
+            <div class="stage-connector"></div>
+            <div class="stage-item completed">
+              <div class="stage-badge">2</div>
+              <div class="stage-title">Docker Build</div>
+              <div class="stage-desc">Đóng gói Image đa tầng</div>
+              <span class="stage-tag success">BUILT</span>
+            </div>
+            <div class="stage-connector"></div>
+            <div class="stage-item completed">
+              <div class="stage-badge">3</div>
+              <div class="stage-title">CI Health Check</div>
+              <div class="stage-desc">Test tại chỗ trước khi Push</div>
+              <span class="stage-tag success">PASSED</span>
+            </div>
+            <div class="stage-connector"></div>
+            <div class="stage-item completed">
+              <div class="stage-badge">4</div>
+              <div class="stage-title">Docker Hub Push</div>
+              <div class="stage-desc">Đẩy Image lên Registry</div>
+              <span class="stage-tag success">PUSHED</span>
+            </div>
+            <div class="stage-connector"></div>
+            <div class="stage-item completed">
+              <div class="stage-badge">5</div>
+              <div class="stage-title">Deploy Target VM</div>
+              <div class="stage-desc">SSH triển khai Target VM</div>
+              <span class="stage-tag success">DEPLOYED</span>
+            </div>
+            <div class="stage-connector"></div>
+            <div class="stage-item completed">
+              <div class="stage-badge">6</div>
+              <div class="stage-title">Smoke Test</div>
+              <div class="stage-desc">Kiểm tra HTTP /healthz</div>
+              <span class="stage-tag success">HTTP 200</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card 4: Interactive API Testing Console -->
+      <section class="card card-api full-width">
+        <div class="card-header">
+          <div class="card-icon">⚡</div>
+          <h2>Bảng Điều Khiển Kiểm Thử API Thực Tế (Backend REST API)</h2>
+        </div>
+        <div class="card-body">
+          <div class="api-actions">
+            <button class="btn btn-primary" onclick="testEndpoint('/healthz')">
+              GET /healthz (Healthcheck)
+            </button>
+            <button class="btn btn-secondary" onclick="testEndpoint('/api/info')">
+              GET /api/info (Sinh viên & Đề tài)
+            </button>
+            <button class="btn btn-secondary" onclick="testEndpoint('/api/system')">
+              GET /api/system (Thông số hệ thống)
+            </button>
+          </div>
+          <div class="console-output">
+            <div class="console-header">
+              <span class="console-label">Phản hồi JSON từ Backend:</span>
+              <span class="response-time" id="response-time">Thời gian: -- ms</span>
+            </div>
+            <pre><code id="api-result">// Bấm một trong các nút phía trên để kiểm tra phản hồi API trực tiếp...</code></pre>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>© 2026 Học viện Công nghệ Bưu chính Viễn thông (PTIT) & TYP Cloud Training.</p>
+      <p>Sinh viên thực hiện: <strong>Nguyễn Vĩnh Tùng - B23DCKH130</strong> | DevOps Engineer</p>
+    </footer>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+
+</html>
